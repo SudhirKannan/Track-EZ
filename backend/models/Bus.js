@@ -1,0 +1,51 @@
+import mongoose from 'mongoose';
+
+const busSchema = new mongoose.Schema({
+  busNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  capacity: {
+    type: Number,
+    required: true,
+    min: 1
+  },
+  driver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  route: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Route',
+    default: null
+  },
+  currentLocation: {
+    latitude: {
+      type: Number,
+      default: 0
+    },
+    longitude: {
+      type: Number,
+      default: 0
+    },
+    lastUpdated: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  students: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
+}, {
+  timestamps: true
+});
+
+export default mongoose.model('Bus', busSchema);
