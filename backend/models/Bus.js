@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import Route from './Route.js';
+import User from './User.js';
 
 const busSchema = new mongoose.Schema({
   busNumber: {

@@ -9,6 +9,7 @@ import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
 import busRoutes from './routes/buses.js';
 import userRoutes from './routes/users.js';
+import locationRoutes from './routes/location.js';
 
 dotenv.config();
 
@@ -38,7 +39,7 @@ app.set('io', io);
 app.use('/api/auth', authRoutes);
 app.use('/api/buses', busRoutes);
 app.use('/api/users', userRoutes);
-
+app.use('/api/location', locationRoutes);
 // Basic route
 app.get('/', (req, res) => {
   res.json({ 

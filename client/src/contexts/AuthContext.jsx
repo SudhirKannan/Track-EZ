@@ -25,11 +25,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const verifyToken = async (token) => {
+  const verifyToken = async () => {
     try {
       const response = await api.get('/auth/verify');
       setUser(response.data.user);
     } catch (error) {
+      console.error('Token verification failed:', error.response?.data?.message || error.message);
       localStorage.removeItem('token');
       delete api.defaults.headers.common['Authorization'];
     } finally {
@@ -41,16 +42,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', credentials);
       const { token, user } = response.data;
-      
+
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
-      
-      return { success: true };
+
+      return { success: true, user };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+      console.error('Login failed:', error.response?.data || error.message);
+      return {
+        success: false,
+        error:
+          error.response?.data?.errors?.[0]?.msg ||
+          error.response?.data?.message ||
+          'Login failed',
       };
     }
   };
@@ -59,16 +64,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data;
-      
+
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
-      
-      return { success: true };
+
+      return { success: true, user };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+      console.error('Registration failed:', error.response?.data || error.message);
+      return {
+        success: false,
+        error:
+          error.response?.data?.errors?.[0]?.msg ||
+          error.response?.data?.message ||
+          'Registration failed',
       };
     }
   };
@@ -90,7 +99,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

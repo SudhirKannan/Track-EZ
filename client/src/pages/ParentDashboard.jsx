@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Bus, MapPin, Users, User, LogOut } from 'lucide-react';
 
 const ParentDashboard = () => {

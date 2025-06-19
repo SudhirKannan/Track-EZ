@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Update bus location (from GPS sender)
 router.post('/', async (req, res) => {
+  console.log('Received location update:', req.body);
   try {
     const { busId, latitude, longitude, timestamp } = req.body;
 
