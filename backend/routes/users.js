@@ -55,4 +55,31 @@ router.post('/assign-bus', authenticate, authorize('admin'), async (req, res) =>
   }
 });
 
+
+// Assign or unassign a bus to a user
+router.put('/:userId/assign-bus', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { busId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // If busId is null or empty string, unassign the bus
+    user.assignedBus = busId || null;
+    await user.save();
+
+    const updatedUser = await User.findById(userId).populate('assignedBus');
+
+    res.json({
+      message: busId ? 'Bus assigned successfully' : 'Bus unassigned successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Assign bus error:', error);
+    res.status(500).json({ message: 'Server error while assigning bus' });
+  }
+});
+
+
 export default router;

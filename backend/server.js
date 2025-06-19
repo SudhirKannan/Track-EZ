@@ -37,9 +37,11 @@ app.set('io', io);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api', authRoutes);
 app.use('/api/buses', busRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/location', locationRoutes);
+
 // Basic route
 app.get('/', (req, res) => {
   res.json({ 
