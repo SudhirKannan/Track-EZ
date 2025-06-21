@@ -27,11 +27,11 @@ const busSchema = new mongoose.Schema({
   currentLocation: {
     latitude: {
       type: Number,
-      default: 0
+      default: null
     },
     longitude: {
       type: Number,
-      default: 0
+      default: null
     },
     lastUpdated: {
       type: Date,

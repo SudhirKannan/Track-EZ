@@ -81,5 +81,22 @@ router.put('/:userId/assign-bus', authenticate, async (req, res) => {
   }
 });
 
+// Delete a user by ID
+router.delete('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const deleted = await User.findByIdAndDelete(userId);
+    if (!deleted) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Server error during user deletion' });
+  }
+});
+
 
 export default router;

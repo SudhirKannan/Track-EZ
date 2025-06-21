@@ -60,7 +60,6 @@
 
 // // export default UserManagement;
 
-
 // import React, { useState, useEffect } from 'react';
 // import { api } from '../services/api';
 // import { useAuth } from '../contexts/AuthContext';
@@ -175,187 +174,221 @@
 
 // export default UserManagement;
 
-
-import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 import { Trash2, UserPlus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 
 const UserManagement = () => {
-  const { user } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [buses, setBuses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'student',
-  });
+    const { user } = useAuth();
+    const [users, setUsers] = useState([]);
+    const [buses, setBuses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'student',
+    });
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [uRes, bRes] = await Promise.all([
-          api.get('/users'),
-          api.get('/buses'),
-        ]);
-        setUsers(Array.isArray(uRes.data.users) ? uRes.data.users : uRes.data);
-        setBuses(Array.isArray(bRes.data.buses) ? bRes.data.buses : bRes.data);
-      } catch (err) {
-        console.error('Fetch error', err);
-      } finally {
-        setLoading(false);
-      }
+    useEffect(() => {
+        const fetchAll = async () => {
+            try {
+                const [uRes, bRes] = await Promise.all([
+                    api.get('/users'),
+                    api.get('/buses'),
+                ]);
+                setUsers(
+                    Array.isArray(uRes.data.users) ? uRes.data.users : uRes.data
+                );
+                setBuses(
+                    Array.isArray(bRes.data.buses) ? bRes.data.buses : bRes.data
+                );
+            } catch (err) {
+                console.error('Fetch error', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
+    }, []);
+
+    const handleDelete = async (userId) => {
+        if (!window.confirm('Delete this user?')) return;
+        try {
+            await api.delete(`/users/${userId}`);
+            setUsers(users.filter((u) => u._id !== userId));
+        } catch (err) {
+            console.error(err);
+        }
     };
-    fetchAll();
-  }, []);
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Delete this user?')) return;
-    try {
-      await api.delete(`/users/${userId}`);
-      setUsers(users.filter((u) => u._id !== userId));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const handleAssign = async (userId, busId) => {
+        try {
+            const updatedBusId = busId;
 
-  const handleAssign = async (userId, busId) => {
-  try {
-    const updatedBusId = busId;
+            await api.put(`/users/${userId}/assign-bus`, {
+                busId: updatedBusId,
+            });
 
-    await api.put(`/users/${userId}/assign-bus`, { busId: updatedBusId });
+            // Refresh user list so UI updates
+            const res = await api.get('/auth/users');
+            setUsers(res.data.users);
+        } catch (err) {
+            console.error(
+                'Failed to assign/unassign bus:',
+                err.response?.data?.message || err.message
+            );
+        }
+    };
 
-    // Refresh user list so UI updates
-    const res = await api.get('/auth/users');
-    setUsers(res.data.users);
-  } catch (err) {
-    console.error('Failed to assign/unassign bus:', err.response?.data?.message || err.message);
-  }
-};
+    const handleAddUser = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await api.post('/auth/register', formData);
+            setUsers([...users, res.data.user]);
+            setFormData({ name: '', email: '', password: '', role: 'student' });
+            setShowForm(false);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Error adding user');
+        }
+    };
 
+    if (loading) return <p>Loading...</p>;
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await api.post('/auth/register', formData);
-      setUsers([...users, res.data.user]);
-      setFormData({ name: '', email: '', password: '', role: 'student' });
-      setShowForm(false);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error adding user');
-    }
-  };
+    return (
+        <div className='p-6 bg-white rounded-lg shadow'>
+            <div className='flex items-center justify-between mb-4'>
+                <h2 className='text-xl font-semibold'>User Management</h2>
+                <button
+                    className='flex items-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600'
+                    onClick={() => setShowForm(!showForm)}
+                >
+                    <UserPlus className='mr-1' /> Add User
+                </button>
+            </div>
 
-  if (loading) return <p>Loading...</p>;
+            {showForm && (
+                <form
+                    onSubmit={handleAddUser}
+                    className='bg-gray-50 p-4 mb-6 rounded border'
+                >
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-3'>
+                        <input
+                            type='text'
+                            placeholder='Name'
+                            value={formData.name}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    name: e.target.value,
+                                })
+                            }
+                            required
+                            className='border p-2 rounded'
+                        />
+                        <input
+                            type='email'
+                            placeholder='Email'
+                            value={formData.email}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    email: e.target.value,
+                                })
+                            }
+                            required
+                            className='border p-2 rounded'
+                        />
+                        <input
+                            type='password'
+                            placeholder='Password'
+                            value={formData.password}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    password: e.target.value,
+                                })
+                            }
+                            required
+                            className='border p-2 rounded'
+                        />
+                        <select
+                            value={formData.role}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    role: e.target.value,
+                                })
+                            }
+                            className='border p-2 rounded'
+                        >
+                            <option value='student'>Student</option>
+                            <option value='admin'>Admin</option>
+                            <option value='driver'>Driver</option>
+                        </select>
+                    </div>
+                    <button
+                        type='submit'
+                        className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+                    >
+                        Create User
+                    </button>
+                </form>
+            )}
 
-  return (
-    <div className="p-6 bg-white rounded-lg shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">User Management</h2>
-        <button
-          className="flex items-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <UserPlus className="mr-1" /> Add User
-        </button>
-      </div>
-
-      {showForm && (
-        <form onSubmit={handleAddUser} className="bg-gray-50 p-4 mb-6 rounded border">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-            <input
-              type="text"
-              placeholder="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="border p-2 rounded"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-              className="border p-2 rounded"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-              className="border p-2 rounded"
-            />
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="border p-2 rounded"
-            >
-              <option value="student">Student</option>
-              <option value="admin">Admin</option>
-              <option value="driver">Driver</option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Create User
-          </button>
-        </form>
-      )}
-
-      <table className="w-full table-auto">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Email</th>
-            <th className="p-2 text-left">Role</th>
-            <th className="p-2 text-left">Assigned Bus</th>
-            <th className="p-2 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-  <tr key={u._id} className="border-t">
-    <td className="p-2">{u.name}</td>
-    <td className="p-2">{u.email}</td>
-    <td className="p-2 capitalize">{u.role}</td>
-    <td className="p-2">
-      <select
-        onChange={e => handleAssign(u._id, e.target.value)}
-        className="border p-1 rounded"
-        value={u.assignedBus?._id || ''}
-      >
-        <option value='' disabled>Assign Bus</option>
-        {buses.map(b => (
-          <option key={b._id} value={b._id}>
-            {b.busNumber}
-          </option>
-        ))}
-      </select>
-    </td>
-    <td className="p-2 text-center">
-      {user._id !== u._id && (
-        <button
-          className="text-red-600 hover:text-red-800"
-          onClick={() => handleDelete(u._id)}
-        >
-          <Trash2 />
-        </button>
-      )}
-    </td>
-  </tr>
-))}
-
-        </tbody>
-      </table>
-    </div>
-  );
+            <table className='w-full table-auto'>
+                <thead className='bg-gray-100'>
+                    <tr>
+                        <th className='p-2 text-left'>Name</th>
+                        <th className='p-2 text-left'>Email</th>
+                        <th className='p-2 text-left'>Role</th>
+                        <th className='p-2 text-left'>Assigned Bus</th>
+                        <th className='p-2 text-center'>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {users.map((u) => (
+                      // console.log(u),
+                        <tr key={u._id} className='border-t'>
+                            <td className='p-2'>{u.name}</td>
+                            <td className='p-2'>{u.email}</td>
+                            <td className='p-2 capitalize'>{u.role}</td>
+                            <td className='p-2'>
+                                <select
+                                    onChange={(e) =>
+                                        handleAssign(u._id, e.target.value)
+                                    }
+                                    className='border p-1 rounded'
+                                    value={u.assignedBus?._id || ''}
+                                >
+                                    <option value='' disabled>
+                                        Assign Bus
+                                    </option>
+                                    {buses.map((b) => (
+                                        <option key={b._id} value={b._id}>
+                                            {b.busNumber}
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+                            <td className='p-2 text-center'>
+                                {user._id !== u._id && (
+                                    <button
+                                        className='text-red-600 hover:text-red-800'
+                                        onClick={() => handleDelete(u._id)}
+                                    >
+                                        <Trash2 />
+                                    </button>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 };
 
 export default UserManagement;

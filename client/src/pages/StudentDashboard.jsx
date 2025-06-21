@@ -1,9 +1,75 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Bus, MapPin, Clock, User, LogOut } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { api } from '../services/api';
+import { Bus, LogOut, User, MapPin, Clock } from 'lucide-react';
+
+// Fix default Leaflet marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// AutoCenter component
+const AutoCenter = ({ location }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (location?.lat && location?.lng) {
+      map.setView([location.lat, location.lng], map.getZoom(), {
+        animate: true,
+      });
+    }
+  }, [location, map]);
+  return null;
+};
 
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
+  const [busId, setBusId] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Get assigned bus
+  useEffect(() => {
+    const fetchAssignedBus = async () => {
+      try {
+        const res = await api.get('/buses/my-bus');
+        const assignedBus = res.data?.bus;
+        if (assignedBus?._id) {
+          setBusId(assignedBus._id);
+        }
+      } catch (err) {
+        console.error('Error fetching bus assignment:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssignedBus();
+  }, []);
+
+  // Poll bus location every 3 seconds
+  useEffect(() => {
+    if (!busId) return;
+
+    const fetchLocation = async () => {
+      try {
+        const res = await api.get(`/buses/${busId}/location`);
+        if (res.data?.location?.lat && res.data?.location?.lng) {
+          setLocation(res.data.location);
+        }
+      } catch (err) {
+        console.error('Error fetching bus location:', err);
+      }
+    };
+
+    fetchLocation();
+    const interval = setInterval(fetchLocation, 3000);
+    return () => clearInterval(interval);
+  }, [busId]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -32,17 +98,19 @@ const StudentDashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Bus Information */}
-            <div className="lg:col-span-2">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    My Bus Information
-                  </h3>
+            {/* Bus & Map */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">My Bus Information</h3>
+                {busId ? (
+                  <p className="text-gray-800">Assigned to Bus ID: {busId}</p>
+                ) : loading ? (
+                  <p className="text-gray-500">Checking bus assignment...</p>
+                ) : (
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                     <div className="flex">
                       <Bus className="h-5 w-5 text-blue-400" />
@@ -56,60 +124,65 @@ const StudentDashboard = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Live Tracking */}
-              <div className="mt-6 bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Live Bus Tracking
-                  </h3>
+              {/* Live Tracking Map */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">Live Bus Tracking</h3>
+                {location ? (
+                  <MapContainer
+                    center={[location.lat, location.lng]}
+                    zoom={16}
+                    style={{ height: '400px', width: '100%' }}
+                    scrollWheelZoom={true}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution="© OpenStreetMap contributors"
+                    />
+                    <Marker position={[location.lat, location.lng]}>
+                      <Popup>Your bus is here!</Popup>
+                    </Marker>
+                    <AutoCenter location={location} />
+                  </MapContainer>
+                ) : busId ? (
+                  <p className="text-gray-500">Loading location...</p>
+                ) : (
                   <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
                     <div className="text-center">
                       <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500">Map will appear here when bus is assigned</p>
+                      <p className="text-gray-500">Map will appear when a bus is assigned.</p>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Quick Stats */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Quick Info
-                  </h3>
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Student ID</dt>
-                      <dd className="text-sm text-gray-900">{user?.studentId || 'Not provided'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Email</dt>
-                      <dd className="text-sm text-gray-900">{user?.email}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Status</dt>
-                      <dd className="text-sm text-green-600">Active</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Activity
-                  </h3>
-                  <div className="text-center py-4">
-                    <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No recent activity</p>
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">Quick Info</h3>
+                <dl className="space-y-3">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Student ID</dt>
+                    <dd className="text-sm text-gray-900">{user?.studentId || 'Not provided'}</dd>
                   </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Email</dt>
+                    <dd className="text-sm text-gray-900">{user?.email}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Status</dt>
+                    <dd className="text-sm text-green-600">Active</dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
+                <div className="text-center py-4">
+                  <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No recent activity</p>
                 </div>
               </div>
             </div>
