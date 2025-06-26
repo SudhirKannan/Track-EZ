@@ -24,8 +24,8 @@ router.post(
             .isLength({ min: 6 })
             .withMessage('Password must be at least 6 characters'),
         body('role')
-            .isIn(['admin', 'student', 'parent', 'staff'])
-            .withMessage('Invalid role'),
+            .isIn(['student', 'parent', 'staff'])
+            .withMessage('Invalid role - admin registration is not allowed'),
     ],
     async (req, res) => {
         try {
@@ -38,6 +38,14 @@ router.post(
             }
 
             const { name, email, password, role, phone, studentId } = req.body;
+
+            // Prevent admin registration
+            if (role === 'admin') {
+                return res.status(400).json({
+                    message:
+                        'Admin registration is not allowed. Only one admin account exists.',
+                });
+            }
 
             // Check if user already exists
             const existingUser = await User.findOne({ email });

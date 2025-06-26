@@ -3,28 +3,49 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-  }
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --border: 214.3 31.8% 91.4%;
+    }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-  }
+    .dark {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+    }
 
-  * {
-    @apply border-border;
-  }
-  
-  body {
-    @apply bg-background text-foreground;
-  }
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
 }
 
+/* Ensure modals appear above everything */
+.modal-overlay {
+    z-index: 9999 !important;
+}
+
+/* Bus marker icon styling */
+.bus-marker-icon {
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Ensure Leaflet map doesn't interfere with modals */
 .leaflet-container {
-  height: 100%;
-  width: 100%;
+    height: 100%;
+    width: 100%;
+    z-index: 1 !important;
+}
+
+.leaflet-popup {
+    z-index: 1000 !important;
+}
+
+/* Modal styling */
+.modal-content {
+    z-index: 10000 !important;
 }
