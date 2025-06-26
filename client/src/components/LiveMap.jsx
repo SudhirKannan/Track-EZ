@@ -22,7 +22,7 @@ const busIcon = new L.Icon({
 const fallbackIcon = new L.Icon({
     iconUrl:
         'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconSize: [50, 50],
+    iconSize: [50,50],
     iconAnchor: [25, 50],
     popupAnchor: [0, -50],
     className: 'bus-marker-icon',
@@ -166,7 +166,7 @@ const LiveMap = ({ busId }) => {
                             <Popup>
                                 <div className='text-center'>
                                     <div className='font-bold text-lg text-blue-600'>
-                                        Bus {loc.busNumber || busId}
+                                         {loc.busNumber || busId}
                                     </div>
                                     <div className='text-sm text-gray-600'>
                                         Latitude: {loc.latitude.toFixed(5)}
