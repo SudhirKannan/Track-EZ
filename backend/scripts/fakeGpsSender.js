@@ -7,17 +7,17 @@ const API_URL = process.env.API_URL || 'http://localhost:5000/api';
 
 // Fake GPS coordinates for simulation (NYC area)
 const routes = [
-  {
-    busId: null,
-    coordinates: [
-      { lat: 13.0827, lng: 80.2707 }, // Chennai Central
-      { lat: 13.0674, lng: 80.2376 }, // Marina Beach
-      { lat: 13.0524, lng: 80.2508 }, // Anna Salai
-      { lat: 13.0352, lng: 80.2089 }, // Guindy
-      { lat: 12.9908, lng: 80.2337 }, // Velachery
-      { lat: 12.9716, lng: 80.2214 }, // Medavakkam
-    ]
-  }
+    {
+        busId: null,
+        coordinates: [
+            { lat: 13.0827, lng: 80.2707 }, // Chennai Central
+            { lat: 13.0674, lng: 80.2376 }, // Marina Beach
+            { lat: 13.0524, lng: 80.2508 }, // Anna Salai
+            { lat: 13.0352, lng: 80.2089 }, // Guindy
+            { lat: 12.9908, lng: 80.2337 }, // Velachery
+            { lat: 12.9716, lng: 80.2214 }, // Medavakkam
+        ],
+    },
 ];
 
 class FakeGPSSender {

@@ -1,20 +1,77 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import io from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 
 const defaultCenter = [13.0827, 80.2707]; // Chennai
 
-// Custom marker icon
+// Custom bus marker icon
 const busIcon = new L.Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61230.png',
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-    popupAnchor: [0, -30],
+    iconUrl:
+        'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl:
+        'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [40, 100],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
 });
+
+// Alternative: Simple colored circle marker
+const createBusIcon = (color = '#3B82F6') => {
+    return L.divIcon({
+        html: `<div style="
+            background-color: ${color};
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4), 0 0 0 3px ${color}40;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        ">🚌</div>`,
+        className: 'custom-bus-marker',
+        iconSize: [35, 35],
+        iconAnchor: [17, 17],
+    });
+};
+
+// Component to handle map centering
+const MapController = ({ selectedBusId, busLocations }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (selectedBusId && busLocations[selectedBusId]) {
+            const location = busLocations[selectedBusId];
+            if (location.latitude && location.longitude) {
+                map.setView([location.latitude, location.longitude], 15);
+            }
+        } else {
+            // Show all buses with appropriate zoom
+            const locations = Object.values(busLocations).filter(
+                (loc) => loc.latitude && loc.longitude
+            );
+            if (locations.length > 0) {
+                const bounds = L.latLngBounds(
+                    locations.map((loc) => [loc.latitude, loc.longitude])
+                );
+                map.fitBounds(bounds, { padding: [20, 20] });
+            } else {
+                map.setView(defaultCenter, 13);
+            }
+        }
+    }, [selectedBusId, busLocations, map]);
+
+    return null;
+};
 
 const LiveMap = () => {
     const { user } = useAuth();
@@ -115,22 +172,41 @@ const LiveMap = () => {
                         attribution='&copy; OpenStreetMap contributors'
                         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                     />
+
+                    {/* Map Controller for auto-centering */}
+                    <MapController
+                        selectedBusId={selectedBusId}
+                        busLocations={busLocations}
+                    />
+
                     {Object.entries(busLocations)
                         .filter(
                             ([id]) => !selectedBusId || id === selectedBusId
                         )
+                        .filter(([busId, loc]) => loc.latitude && loc.longitude)
                         .map(([busId, loc]) => (
                             <Marker
                                 key={busId}
                                 position={[loc.latitude, loc.longitude]}
-                                icon={busIcon}
+                                icon={createBusIcon(
+                                    selectedBusId === busId
+                                        ? '#FF4444'
+                                        : '#00AAFF'
+                                )}
                             >
                                 <Popup>
-                                    Bus: {loc.busNumber || busId}
-                                    <br />
-                                    Lat: {loc.latitude.toFixed(5)}
-                                    <br />
-                                    Lng: {loc.longitude.toFixed(5)}
+                                    <div className='text-center'>
+                                        <div className='text-lg mb-1'>🚌</div>
+                                        <strong>
+                                            Bus: {loc.busNumber || busId}
+                                        </strong>
+                                        <br />
+                                        <small className='text-gray-600'>
+                                            Lat: {loc.latitude ? loc.latitude.toFixed(5) : 'N/A'}
+                                            <br />
+                                            Lng: {loc.longitude ? loc.longitude.toFixed(5) : 'N/A'}
+                                        </small>
+                                    </div>
                                 </Popup>
                             </Marker>
                         ))}

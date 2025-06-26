@@ -76,6 +76,81 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     }
 });
 
+// Update bus (Admin only)
+router.put('/:busId', authenticate, authorize('admin'), async (req, res) => {
+    try {
+        const { busNumber, capacity, driverId, routeId } = req.body;
+        const { busId } = req.params;
+
+        // Check if bus exists
+        const existingBus = await Bus.findById(busId);
+        if (!existingBus) {
+            return res.status(404).json({ message: 'Bus not found' });
+        }
+
+        // Check if bus number already exists (excluding current bus)
+        if (busNumber && busNumber !== existingBus.busNumber) {
+            const duplicateBus = await Bus.findOne({ busNumber });
+            if (duplicateBus) {
+                return res
+                    .status(400)
+                    .json({ message: 'Bus number already exists' });
+            }
+        }
+
+        const updatedBus = await Bus.findByIdAndUpdate(
+            busId,
+            {
+                busNumber,
+                capacity,
+                driver: driverId || null,
+                route: routeId || null,
+            },
+            { new: true }
+        )
+            .populate('driver', 'name email phone')
+            .populate('route', 'routeName');
+
+        res.json({
+            message: 'Bus updated successfully',
+            bus: updatedBus,
+        });
+    } catch (error) {
+        console.error('Update bus error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Delete bus (Admin only)
+router.delete('/:busId', authenticate, authorize('admin'), async (req, res) => {
+    try {
+        const { busId } = req.params;
+
+        // Check if bus exists
+        const existingBus = await Bus.findById(busId);
+        if (!existingBus) {
+            return res.status(404).json({ message: 'Bus not found' });
+        }
+
+        // Check if bus has assigned students
+        if (existingBus.students && existingBus.students.length > 0) {
+            return res.status(400).json({
+                message:
+                    'Cannot delete bus with assigned students. Please reassign students first.',
+            });
+        }
+
+        await Bus.findByIdAndDelete(busId);
+
+        res.json({
+            message: 'Bus deleted successfully',
+        });
+    } catch (error) {
+        console.error('Delete bus error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Update bus location
 router.post('/location', async (req, res) => {
     try {
@@ -109,30 +184,29 @@ router.post('/location', async (req, res) => {
     }
 });
 router.get('/:busId/location', async (req, res) => {
-  try {
-    const bus = await Bus.findById(req.params.busId);
+    try {
+        const bus = await Bus.findById(req.params.busId);
 
-    if (!bus) {
-      return res.status(404).json({ message: 'Bus not found' });
+        if (!bus) {
+            return res.status(404).json({ message: 'Bus not found' });
+        }
+
+        const loc = bus.currentLocation;
+
+        if (!loc || loc.latitude == null || loc.longitude == null) {
+            return res.status(404).json({ message: 'Location not available' });
+        }
+
+        res.json({
+            location: {
+                lat: loc.latitude,
+                lng: loc.longitude,
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching bus location:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-
-    const loc = bus.currentLocation;
-
-    if (!loc || loc.latitude == null || loc.longitude == null) {
-      return res.status(404).json({ message: 'Location not available' });
-    }
-
-    res.json({
-      location: {
-        lat: loc.latitude,
-        lng: loc.longitude,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching bus location:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
 });
-
 
 export default router;

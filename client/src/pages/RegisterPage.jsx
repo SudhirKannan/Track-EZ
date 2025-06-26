@@ -35,21 +35,10 @@ const RegisterPage = () => {
         const result = await register(formData);
 
         if (result.success) {
-            switch (result.user.role) {
-                case 'admin':
-                    navigate('/admin');
-                    break;
-                case 'student':
-                    navigate('/student');
-                    break;
-                case 'parent':
-                    navigate('/parent');
-                    break;
-                case 'staff':
-                    navigate('/staff');
-                    break;
-                default:
-                    navigate('/');
+            if (result.user.role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/user');
             }
         } else {
             setError(
