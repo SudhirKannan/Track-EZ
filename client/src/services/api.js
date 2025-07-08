@@ -3,9 +3,9 @@ import axios from 'axios';
 const API_BASE_URL =
     import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const api = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: 10000,
+const API = axios.create({
+  baseURL: 'https://track-ez-1.onrender.com/api', // ✅ must include /api
+  withCredentials: true, // optional for JWT auth
 });
 
 // Request interceptor
