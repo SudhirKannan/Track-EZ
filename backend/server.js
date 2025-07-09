@@ -39,28 +39,32 @@ connectDB();
 // );
 
 
-
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://track-ez.vercel.app',
-  'https://smartbus-e85kavmy8-sudhirkannans-projects.vercel.app',
+  'https://smartbus.vercel.app',
+  'https://track-ez.vercel.app'
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Allow server-side or tools
-      const cleanOrigin = origin.replace(/\/$/, ''); // Remove trailing slash
-      const isAllowed = allowedOrigins.includes(cleanOrigin);
-      if (isAllowed) {
+      if (!origin) return callback(null, true); // SSR, Postman, etc.
+
+      const cleanOrigin = origin.replace(/\/$/, '');
+
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.vercel.app') // ✅ allow all Vercel preview URLs
+      ) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS: ' + origin));
+        callback(new Error('Blocked by CORS: ' + origin));
       }
     },
     credentials: true,
   })
 );
+
 
 
 app.use(express.json());
