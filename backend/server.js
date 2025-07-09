@@ -4,6 +4,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/database.js';
+import './scripts/fakeGpsSender.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
