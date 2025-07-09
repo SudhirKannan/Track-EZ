@@ -31,12 +31,36 @@ const io = new Server(server, {
 connectDB();
 
 // Middleware
-app.use(
-    cors({
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
-        credentials: true,
-    })
-);
+// app.use(
+//     cors({
+//         origin: process.env.CLIENT_URL || 'http://localhost:5173',
+//         credentials: true,
+//     })
+// );
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow server-side tools
+
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'https://track-ez.vercel.app',
+      'https://smartbus-e85kavmy8-sudhirkannans-projects.vercel.app'
+    ];
+
+    const trimmedOrigin = origin.replace(/\/$/, ''); // remove trailing slash
+
+    if (allowedOrigins.includes(trimmedOrigin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS: ' + origin));
+    }
+  },
+  credentials: true,
+}));
+
+
+
 app.use(express.json());
 
 // Make io accessible to routes
